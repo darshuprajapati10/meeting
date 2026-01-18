@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" fill="none">
+    <!-- YUJIX Logo - Simplified for Favicon -->
+    <!-- Dark blue/navy circle (head) -->
+    <circle cx="12" cy="10" r="6" fill="#17313E"/>
+    
+    <!-- Dark blue/navy curved path (body/connection) -->
+    <path d="M6 22 C6 16, 18 16, 18 22 C18 28, 30 28, 30 22" 
+          stroke="#17313E" 
+          stroke-width="4" 
+          fill="none" 
+          stroke-linecap="round"/>
+    
+    <!-- Light grey circle (partner/connection) -->
+    <circle cx="30" cy="28" r="5" fill="#C5B0CD"/>
+</svg>
+

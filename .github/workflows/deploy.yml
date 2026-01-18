@@ -1,0 +1,118 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Digital Ocean
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add server to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H 157.245.97.43 >> ~/.ssh/known_hosts
+
+      - name: Deploy to server
+        run: |
+          ssh deploy@157.245.97.43 'bash -s' << 'ENDSSH'
+            set -e
+
+            echo "=========================================="
+            echo "Deployment started at $(date)"
+            echo "=========================================="
+
+            cd /var/www/yujix
+
+            # Enable maintenance mode
+            echo "Enabling maintenance mode..."
+            php artisan down --retry=60 || true
+
+            # Pull latest code
+            echo "Pulling latest code from main branch..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            # Install/update PHP dependencies
+            echo "Installing PHP dependencies..."
+            composer install --no-dev --optimize-autoloader --no-interaction
+
+            # Install/update Node dependencies
+            echo "Installing Node dependencies..."
+            npm ci --omit=dev
+
+            # Build frontend assets
+            echo "Building frontend assets..."
+            npm run build
+
+            # Run database migrations
+            echo "Running database migrations..."
+            php artisan migrate --force
+
+            # Clear all caches
+            echo "Clearing caches..."
+            php artisan config:clear
+            php artisan cache:clear
+            php artisan view:clear
+            php artisan route:clear
+
+            # Rebuild caches for production
+            echo "Rebuilding caches..."
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            # Optimize autoloader
+            echo "Optimizing autoloader..."
+            composer dump-autoload --optimize
+
+            # Set proper permissions
+            echo "Setting permissions..."
+            chmod -R 775 storage bootstrap/cache
+
+            # Restart services
+            echo "Restarting services..."
+            sudo supervisorctl restart yujix-worker:*
+            sudo systemctl restart php8.2-fpm
+
+            # Disable maintenance mode
+            echo "Disabling maintenance mode..."
+            php artisan up
+
+            echo "=========================================="
+            echo "Deployment completed successfully at $(date)"
+            echo "=========================================="
+          ENDSSH
+
+      - name: Verify deployment
+        run: |
+          echo "Verifying deployment..."
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://yujix.com)
+          if [ "$HTTP_CODE" -eq 200 ] || [ "$HTTP_CODE" -eq 302 ]; then
+            echo "Deployment verification successful (HTTP $HTTP_CODE)"
+          else
+            echo "Deployment verification failed (HTTP $HTTP_CODE)"
+            exit 1
+          fi
+
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "Deployment to yujix.com completed successfully!"
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "Deployment failed! Check the logs above for details."
+          exit 1

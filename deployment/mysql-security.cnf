@@ -1,0 +1,171 @@
+# MySQL Security Hardening Configuration
+# Deploy to: /etc/mysql/mysql.conf.d/99-security.cnf
+#
+# This file contains security-focused MySQL configuration overrides
+# for production environments.
+#
+# Deployment:
+# sudo cp deployment/mysql-security.cnf /etc/mysql/mysql.conf.d/99-security.cnf
+# sudo systemctl restart mysql
+#
+# Verify: mysql -u root -p -e "SHOW VARIABLES LIKE '%bind%';"
+
+[mysqld]
+# ============================================================================
+# Network Security
+# ============================================================================
+
+# Bind to localhost only (no remote connections)
+# Application connects via localhost - no need for external access
+bind-address = 127.0.0.1
+
+# Skip name resolution for faster connections and security
+skip-name-resolve = 1
+
+# ============================================================================
+# Disable Dangerous Features
+# ============================================================================
+
+# Disable LOAD DATA LOCAL INFILE (prevents local file reading attacks)
+local-infile = 0
+
+# Disable symbolic links (prevents symlink attacks)
+symbolic-links = 0
+
+# ============================================================================
+# Binary Logging (Point-in-Time Recovery)
+# ============================================================================
+
+# Enable binary logging for backup and recovery
+log_bin = /var/log/mysql/mysql-bin.log
+
+# Keep binary logs for 7 days
+binlog_expire_logs_seconds = 604800
+
+# Maximum binary log size before rotation
+max_binlog_size = 100M
+
+# Binary log format (ROW is most secure)
+binlog_format = ROW
+
+# ============================================================================
+# Query Logging (Performance Monitoring)
+# ============================================================================
+
+# Enable slow query log
+slow_query_log = 1
+slow_query_log_file = /var/log/mysql/slow-query.log
+
+# Log queries slower than 2 seconds
+long_query_time = 2
+
+# Log queries not using indexes (performance issue)
+log_queries_not_using_indexes = 0
+
+# ============================================================================
+# Error Logging
+# ============================================================================
+
+# Error log location
+log_error = /var/log/mysql/error.log
+
+# Log warnings
+log_warnings = 2
+
+# ============================================================================
+# Connection Limits
+# ============================================================================
+
+# Maximum simultaneous connections
+max_connections = 200
+
+# Maximum connection errors before host is blocked
+max_connect_errors = 10
+
+# Timeout for idle connections (10 minutes)
+wait_timeout = 600
+interactive_timeout = 600
+
+# ============================================================================
+# Performance & Security Balance
+# ============================================================================
+
+# InnoDB buffer pool size (50-70% of RAM for dedicated DB server)
+# For shared server with 2GB RAM: 512MB
+innodb_buffer_pool_size = 512M
+
+# InnoDB log file size
+innodb_log_file_size = 128M
+
+# InnoDB flush method (more secure)
+innodb_flush_method = O_DIRECT
+
+# Disable query cache (removed in MySQL 8.0+)
+# query_cache_type = 0
+# query_cache_size = 0
+
+# ============================================================================
+# SQL Mode (Strict)
+# ============================================================================
+
+# Use strict SQL mode for data integrity
+sql_mode = STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+
+# ============================================================================
+# Character Set
+# ============================================================================
+
+# Use UTF-8 by default
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+
+# ============================================================================
+# SSL/TLS Configuration (Optional - Future Enhancement)
+# ============================================================================
+
+# Uncomment to require SSL connections (requires SSL certificates)
+# require_secure_transport = ON
+
+# SSL certificate paths (generate with: mysql_ssl_rsa_setup)
+# ssl-ca = /var/lib/mysql/ca.pem
+# ssl-cert = /var/lib/mysql/server-cert.pem
+# ssl-key = /var/lib/mysql/server-key.pem
+
+# ============================================================================
+# Additional Security
+# ============================================================================
+
+# Disable SHOW DATABASES for non-privileged users
+# (Set via GRANT permissions, not config)
+
+# Set secure file privileges directory
+secure_file_priv = /var/lib/mysql-files
+
+# Automatic user password expiration (0 = never, 90 = 90 days)
+default_password_lifetime = 0
+
+# ============================================================================
+# Verification Queries
+# ============================================================================
+
+# After deployment, verify settings:
+#
+# 1. Check bind address:
+# mysql -u root -p -e "SHOW VARIABLES LIKE 'bind_address';"
+# Expected: 127.0.0.1
+#
+# 2. Check local infile disabled:
+# mysql -u root -p -e "SHOW VARIABLES LIKE 'local_infile';"
+# Expected: OFF
+#
+# 3. Check binary logging:
+# mysql -u root -p -e "SHOW BINARY LOGS;"
+# Expected: List of binary logs
+#
+# 4. Check connection limit:
+# mysql -u root -p -e "SHOW VARIABLES LIKE 'max_connections';"
+# Expected: 200
+#
+# 5. Verify no remote connections possible:
+# mysql -h 157.245.97.43 -u yujix_user -p
+# Expected: ERROR 2003 (HY000): Can't connect

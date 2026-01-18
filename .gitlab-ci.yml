@@ -1,0 +1,166 @@
+stages:
+  - deploy
+
+deploy_production:
+  stage: deploy
+  image: ubuntu:22.04
+  only:
+    - main
+  before_script:
+    - apt-get update -qq
+    - apt-get install -y openssh-client curl
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | base64 -d | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H 157.245.97.43 >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+
+  script:
+    - |
+      ssh deploy@157.245.97.43 'bash -s' << 'ENDSSH'
+        set -e
+
+        # Configuration
+        DEPLOY_BASE="/var/www/yujix"
+        RELEASES_DIR="${DEPLOY_BASE}/releases"
+        SHARED_DIR="${DEPLOY_BASE}/shared"
+        CURRENT_LINK="${DEPLOY_BASE}/current"
+        RELEASE_NAME=$(date +"%Y%m%d-%H%M%S")
+        RELEASE_PATH="${RELEASES_DIR}/${RELEASE_NAME}"
+        HEALTH_CHECK_URL="https://yujix.com/api/health"
+
+        echo "=========================================="
+        echo "Zero-Downtime Deployment: ${RELEASE_NAME}"
+        echo "Started at: $(date)"
+        echo "=========================================="
+
+        # Create release directory
+        echo "Creating release directory..."
+        mkdir -p "$RELEASES_DIR"
+
+        # Clone code to new release
+        echo "Cloning code..."
+        git clone --depth 1 --branch main git@gitlab.com:ongoingcloud/ongoing-meet-api.git "$RELEASE_PATH"
+
+        cd "$RELEASE_PATH"
+
+        # Create symlinks to shared resources
+        echo "Creating shared symlinks..."
+        rm -rf storage && ln -sfn "${SHARED_DIR}/storage" storage
+        rm -f .env && ln -sfn "${SHARED_DIR}/.env" .env
+
+        # Install PHP dependencies
+        echo "Installing Composer dependencies..."
+        composer install --no-dev --optimize-autoloader --no-interaction --quiet
+
+        # Using pre-built assets (committed to repo)
+        echo "Using pre-built assets from repository..."
+
+        # Set permissions
+        echo "Setting permissions..."
+        chown -R deploy:www-data "$RELEASE_PATH"
+        chmod -R 755 "$RELEASE_PATH"
+        chmod -R 775 "${RELEASE_PATH}/bootstrap/cache"
+
+        # Ensure shared storage permissions
+        chown -R deploy:www-data "${SHARED_DIR}/storage"
+        find "${SHARED_DIR}/storage" -type d -exec chmod 775 {} \; 2>/dev/null || true
+        find "${SHARED_DIR}/storage" -type f -exec chmod 664 {} \; 2>/dev/null || true
+
+        # Run database migrations (backward compatible!)
+        echo "Running database migrations..."
+        php artisan migrate --force --no-interaction
+
+        # Optimize caches in new release
+        echo "Optimizing caches..."
+        php artisan config:cache --quiet
+        php artisan route:cache --quiet
+        php artisan view:cache --quiet
+
+        # Verify new release is functional before switching
+        echo "Verifying new release..."
+        php artisan --version
+
+        # ATOMIC SYMLINK SWAP (zero-downtime magic!)
+        echo "Switching to new release (atomic operation)..."
+        ln -sfn "$RELEASE_PATH" "${CURRENT_LINK}.tmp"
+        mv -Tf "${CURRENT_LINK}.tmp" "$CURRENT_LINK"
+
+        echo "Symlink updated: $(readlink $CURRENT_LINK)"
+
+        # Reload PHP-FPM gracefully (no dropped connections)
+        echo "Reloading PHP-FPM..."
+        sudo systemctl reload php8.2-fpm
+
+        # Restart queue workers via supervisor (force immediate restart)
+        echo "Restarting queue workers..."
+        sudo supervisorctl restart yujix:* || true
+
+        # Wait for workers to start with new release
+        sleep 5
+
+        # Verify workers are running from current release
+        cd "$CURRENT_LINK"
+
+        # Health check with automatic rollback on failure
+        echo "Running health checks..."
+        HEALTH_PASSED=false
+        for i in {1..5}; do
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -m 10 "$HEALTH_CHECK_URL" || echo "000")
+          if [ "$HTTP_CODE" -eq 200 ]; then
+            echo "✅ Health check passed (HTTP $HTTP_CODE)"
+            HEALTH_PASSED=true
+            break
+          fi
+          if [ $i -eq 5 ]; then
+            echo "❌ Health check failed after 5 attempts - Rolling back"
+            PREVIOUS=$(ls -t "$RELEASES_DIR" | grep -v "^${RELEASE_NAME}$" | head -1)
+            if [ -n "$PREVIOUS" ]; then
+              echo "Rolling back to previous release: $PREVIOUS"
+              ln -sfn "${RELEASES_DIR}/${PREVIOUS}" "$CURRENT_LINK"
+              sudo systemctl reload php8.2-fpm
+              sudo supervisorctl restart yujix:* || true
+              echo "Rolled back to: $PREVIOUS"
+            fi
+            exit 1
+          fi
+          echo "Health check attempt $i failed (HTTP $HTTP_CODE), retrying in 3 seconds..."
+          sleep 3
+        done
+
+        # Verify supervisor workers are running
+        if [ "$HEALTH_PASSED" = true ]; then
+          WORKER_STATUS=$(sudo supervisorctl status yujix:* | grep RUNNING | wc -l)
+          echo "Active queue workers: $WORKER_STATUS"
+        fi
+
+        # Cleanup old releases (keep last 5)
+        echo "Cleaning up old releases..."
+        cd "$RELEASES_DIR"
+        ls -t | tail -n +6 | xargs -r rm -rf
+
+        echo "=========================================="
+        echo "✅ Deployment Complete"
+        echo "Release: ${RELEASE_NAME}"
+        echo "Completed at: $(date)"
+        echo "=========================================="
+      ENDSSH
+
+  after_script:
+    - |
+      echo "Verifying deployment..."
+      HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://yujix.com/api/health || echo "000")
+      if [ "$HTTP_CODE" -eq 200 ] || [ "$HTTP_CODE" -eq 302 ]; then
+        echo "✅ Deployment verification successful (HTTP $HTTP_CODE)"
+      else
+        echo "⚠️  Deployment verification returned HTTP $HTTP_CODE"
+      fi
+
+  environment:
+    name: production
+    url: https://yujix.com
+
+  # Changed from 'manual' to automatic deployment
+  # when: manual
+  allow_failure: false

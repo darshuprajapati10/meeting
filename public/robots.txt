@@ -1,0 +1,27 @@
+# YUJIX Robots.txt
+# https://www.robotstxt.org/
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://yujix.com/sitemap.xml
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1
+
+# Disallow API and admin routes
+Disallow: /api/
+Disallow: /admin/
+Disallow: /storage/
+Disallow: /_debugbar/
+
+# Allow all marketing pages
+Allow: /
+Allow: /features
+Allow: /pricing
+Allow: /about
+Allow: /contact
+Allow: /get-started
+Allow: /blog
+Allow: /blog/*
