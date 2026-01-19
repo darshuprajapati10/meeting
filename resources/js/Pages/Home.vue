@@ -92,7 +92,7 @@ const workflows = [
     </Head>
     <AppLayout>
         <!-- Hero Section -->
-        <section class="relative min-h-screen bg-gradient-radial bg-hero-pattern overflow-hidden pt-20">
+        <section class="relative min-h-screen bg-[#F8F4F1] bg-gradient-radial bg-hero-pattern overflow-hidden pt-20">
             <!-- Floating Elements -->
             <div class="absolute inset-0 overflow-hidden pointer-events-none">
                 <div class="absolute top-1/4 left-10 w-20 h-20 bg-lavender/30 rounded-full blur-xl animate-float"></div>
@@ -123,7 +123,7 @@ const workflows = [
                         </p>
 
                         <div class="mt-10 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-in-up delay-300">
-                            <Link href="/get-started" class="btn-primary px-8 py-4 text-base font-semibold rounded-xl shadow-lg shadow-teal/25 hover:shadow-xl hover:shadow-teal/30 transition-all">
+                            <Link href="/register" class="btn-primary px-8 py-4 text-base font-semibold rounded-xl shadow-lg shadow-teal/25 hover:shadow-xl hover:shadow-teal/30 transition-all">
                                 Get Started Free
                             </Link>
                             <Link href="/features" class="btn-outline px-8 py-4 text-base font-semibold rounded-xl">
@@ -395,7 +395,7 @@ const workflows = [
                     Join thousands of teams already using YUJIX for efficient meeting management, smart contact organization, and comprehensive surveys.
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up delay-200">
-                    <Link href="/get-started" class="bg-white text-navy px-8 py-4 text-base font-semibold rounded-xl hover:bg-cream transition-colors shadow-lg">
+                    <Link href="/register" class="bg-white text-navy px-8 py-4 text-base font-semibold rounded-xl hover:bg-cream transition-colors shadow-lg">
                         Get Started Free
                     </Link>
                     <Link href="/pricing" class="border-2 border-white/30 text-white px-8 py-4 text-base font-semibold rounded-xl hover:bg-white/10 transition-colors">

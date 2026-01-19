@@ -323,7 +323,7 @@ const comparisons = [
                     Start with FREE plan today. No credit card required. Upgrade to PRO when you need more.
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up delay-200">
-                    <Link href="/get-started" class="bg-white text-navy px-8 py-4 text-base font-semibold rounded-xl hover:bg-cream transition-colors shadow-lg">
+                    <Link href="/register" class="bg-white text-navy px-8 py-4 text-base font-semibold rounded-xl hover:bg-cream transition-colors shadow-lg">
                         Start Free Trial
                     </Link>
                     <Link href="/contact" class="border-2 border-white/30 text-white px-8 py-4 text-base font-semibold rounded-xl hover:bg-white/10 transition-colors">

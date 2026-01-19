@@ -1,16 +1,50 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import axios from 'axios';
 
 const form = ref({
     name: '',
-    organization: '',
+    organization_name: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    password_confirmation: ''
 });
 
 const showPassword = ref(false);
+const showConfirmPassword = ref(false);
+const errors = ref({});
+const isSubmitting = ref(false);
+
+const submitForm = async () => {
+    errors.value = {};
+    isSubmitting.value = true;
+
+    try {
+        const response = await axios.post('/api/register', {
+            name: form.value.name,
+            email: form.value.email,
+            password: form.value.password,
+            password_confirmation: form.value.password_confirmation,
+            organization_name: form.value.organization_name || form.value.name + "'s Organization"
+        });
+
+        // Redirect to login page after successful registration
+        router.visit(`/login?registered=true&email=${encodeURIComponent(form.value.email)}`, {
+            method: 'get'
+        });
+    } catch (error) {
+        if (error.response?.data?.errors) {
+            errors.value = error.response.data.errors;
+        } else if (error.response?.data?.message) {
+            errors.value = { general: error.response.data.message };
+        } else {
+            errors.value = { general: 'Registration failed. Please try again.' };
+        }
+    } finally {
+        isSubmitting.value = false;
+    }
+};
 </script>
 
 <template>
@@ -51,46 +85,70 @@ const showPassword = ref(false);
                     <div class="flex-1 h-px bg-lavender/50"></div>
                 </div>
 
+                <!-- Error Message -->
+                <div v-if="errors.general" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm animate-fade-in-up">
+                    {{ errors.general }}
+                </div>
+
                 <!-- Form -->
-                <form class="space-y-4 animate-fade-in-up delay-300">
+                <form @submit.prevent="submitForm" class="space-y-4 animate-fade-in-up delay-300">
                     <div>
-                        <label class="block text-sm font-medium text-navy mb-2">Full Name</label>
+                        <label class="block text-sm font-medium text-navy mb-2">Full Name <span class="text-red-500">*</span></label>
                         <input
                             v-model="form.name"
                             type="text"
                             placeholder="Enter your name"
-                            class="w-full px-4 py-3 rounded-xl border border-lavender/50 focus:ring-2 focus:ring-teal/30 focus:border-teal"
+                            required
+                            :class="[
+                                'w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-teal/30 focus:border-teal',
+                                errors.name ? 'border-red-400' : 'border-lavender/50'
+                            ]"
                         />
+                        <p v-if="errors.name" class="mt-1 text-xs text-red-500">{{ errors.name[0] }}</p>
                     </div>
 
                     <div>
                         <label class="block text-sm font-medium text-navy mb-2">Organization</label>
                         <input
-                            v-model="form.organization"
+                            v-model="form.organization_name"
                             type="text"
-                            placeholder="Your company or team name"
-                            class="w-full px-4 py-3 rounded-xl border border-lavender/50 focus:ring-2 focus:ring-teal/30 focus:border-teal"
+                            placeholder="Your company or team name (optional)"
+                            :class="[
+                                'w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-teal/30 focus:border-teal',
+                                errors.organization_name ? 'border-red-400' : 'border-lavender/50'
+                            ]"
                         />
+                        <p v-if="errors.organization_name" class="mt-1 text-xs text-red-500">{{ errors.organization_name[0] }}</p>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-navy mb-2">Email</label>
+                        <label class="block text-sm font-medium text-navy mb-2">Email <span class="text-red-500">*</span></label>
                         <input
                             v-model="form.email"
                             type="email"
                             placeholder="Enter your email"
-                            class="w-full px-4 py-3 rounded-xl border border-lavender/50 focus:ring-2 focus:ring-teal/30 focus:border-teal"
+                            required
+                            :class="[
+                                'w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-teal/30 focus:border-teal',
+                                errors.email ? 'border-red-400' : 'border-lavender/50'
+                            ]"
                         />
+                        <p v-if="errors.email" class="mt-1 text-xs text-red-500">{{ errors.email[0] }}</p>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-navy mb-2">Password</label>
+                        <label class="block text-sm font-medium text-navy mb-2">Password <span class="text-red-500">*</span></label>
                         <div class="relative">
                             <input
                                 v-model="form.password"
                                 :type="showPassword ? 'text' : 'password'"
                                 placeholder="Create a password"
-                                class="w-full px-4 py-3 rounded-xl border border-lavender/50 focus:ring-2 focus:ring-teal/30 focus:border-teal pr-12"
+                                required
+                                minlength="8"
+                                :class="[
+                                    'w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-teal/30 focus:border-teal pr-12',
+                                    errors.password ? 'border-red-400' : 'border-lavender/50'
+                                ]"
                             />
                             <button
                                 type="button"
@@ -107,10 +165,54 @@ const showPassword = ref(false);
                             </button>
                         </div>
                         <p class="text-xs text-teal/50 mt-1">Must be at least 8 characters</p>
+                        <p v-if="errors.password" class="mt-1 text-xs text-red-500">{{ errors.password[0] }}</p>
                     </div>
 
-                    <button type="submit" class="w-full btn-primary py-3 rounded-xl font-semibold mt-6">
-                        Create Account
+                    <div>
+                        <label class="block text-sm font-medium text-navy mb-2">Confirm Password <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <input
+                                v-model="form.password_confirmation"
+                                :type="showConfirmPassword ? 'text' : 'password'"
+                                placeholder="Confirm your password"
+                                required
+                                :class="[
+                                    'w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-teal/30 focus:border-teal pr-12',
+                                    errors.password_confirmation ? 'border-red-400' : 'border-lavender/50'
+                                ]"
+                            />
+                            <button
+                                type="button"
+                                @click="showConfirmPassword = !showConfirmPassword"
+                                class="absolute right-4 top-1/2 -translate-y-1/2 text-teal/50 hover:text-teal"
+                            >
+                                <svg v-if="!showConfirmPassword" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                </svg>
+                            </button>
+                        </div>
+                        <p v-if="errors.password_confirmation" class="mt-1 text-xs text-red-500">{{ errors.password_confirmation[0] }}</p>
+                    </div>
+
+                    <button 
+                        type="submit" 
+                        :disabled="isSubmitting"
+                        :class="[
+                            'w-full py-3 rounded-xl font-semibold mt-6 transition-all flex items-center justify-center gap-2',
+                            isSubmitting 
+                                ? 'bg-teal/70 cursor-not-allowed' 
+                                : 'btn-primary hover:shadow-lg'
+                        ]"
+                    >
+                        <svg v-if="isSubmitting" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        {{ isSubmitting ? 'Creating Account...' : 'Create Account' }}
                     </button>
 
                     <p class="text-xs text-teal/60 text-center">

@@ -286,7 +286,7 @@ const relatedPosts = computed(() => {
                     <div class="mt-12 bg-gradient-navy rounded-2xl p-8 text-white text-center">
                         <h3 class="text-2xl font-bold mb-4">Ready to Improve Your Meetings?</h3>
                         <p class="text-cream/80 mb-6">Start using YUJIX today and transform how your team manages meetings.</p>
-                        <Link href="/get-started" class="inline-block bg-white text-navy px-8 py-3 rounded-xl font-semibold hover:bg-cream transition-colors">
+                        <Link href="/register" class="inline-block bg-white text-navy px-8 py-3 rounded-xl font-semibold hover:bg-cream transition-colors">
                             Get Started Free
                         </Link>
                     </div>

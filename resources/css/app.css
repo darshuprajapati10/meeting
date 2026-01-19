@@ -135,12 +135,18 @@
 
 .bg-gradient-radial {
     background: radial-gradient(ellipse at top, var(--color-cream-light) 0%, var(--color-cream) 50%, var(--color-lavender-light) 100%);
+    background-attachment: fixed;
 }
 
 .bg-hero-pattern {
-    background-image: radial-gradient(circle at 20% 50%, rgba(197, 176, 205, 0.3) 0%, transparent 50%),
-                      radial-gradient(circle at 80% 20%, rgba(65, 94, 114, 0.1) 0%, transparent 40%),
-                      radial-gradient(circle at 40% 80%, rgba(197, 176, 205, 0.2) 0%, transparent 40%);
+    background-image: 
+        radial-gradient(circle at 20% 50%, rgba(197, 176, 205, 0.4) 0%, transparent 60%),
+        radial-gradient(circle at 80% 20%, rgba(65, 94, 114, 0.2) 0%, transparent 50%),
+        radial-gradient(circle at 40% 80%, rgba(197, 176, 205, 0.3) 0%, transparent 50%),
+        linear-gradient(135deg, rgba(241, 231, 225, 0.8) 0%, rgba(212, 197, 218, 0.6) 100%);
+    background-size: 100% 100%, 100% 100%, 100% 100%, cover;
+    background-position: center;
+    background-repeat: no-repeat;
 }
 
 /* Custom Scrollbar */

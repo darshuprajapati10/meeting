@@ -245,7 +245,7 @@ const setCategory = (categoryName) => {
                         <div class="bg-gradient-navy rounded-2xl p-6 text-white animate-fade-in-up delay-300">
                             <h3 class="font-bold mb-2">Try YUJIX Free</h3>
                             <p class="text-sm text-cream/80 mb-4">Start managing your meetings more effectively today.</p>
-                            <Link href="/get-started" class="block w-full py-2.5 bg-white text-navy rounded-xl font-medium text-center text-sm hover:bg-cream transition-colors">
+                            <Link href="/register" class="block w-full py-2.5 bg-white text-navy rounded-xl font-medium text-center text-sm hover:bg-cream transition-colors">
                                 Get Started
                             </Link>
                         </div>
@@ -308,7 +308,7 @@ const setCategory = (categoryName) => {
                     Join thousands of teams using YUJIX for better meeting management.
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up delay-200">
-                    <Link href="/get-started" class="bg-white text-navy px-8 py-4 text-base font-semibold rounded-xl hover:bg-cream transition-colors shadow-lg">
+                    <Link href="/register" class="bg-white text-navy px-8 py-4 text-base font-semibold rounded-xl hover:bg-cream transition-colors shadow-lg">
                         Get Started Free
                     </Link>
                     <Link href="/features" class="border-2 border-white/30 text-white px-8 py-4 text-base font-semibold rounded-xl hover:bg-white/10 transition-colors">

@@ -62,7 +62,7 @@ const navLinks = [
 
                     <!-- CTA Button -->
                     <div class="hidden lg:flex items-center">
-                        <Link href="/get-started" class="btn-primary px-5 py-2.5 text-sm font-medium rounded-xl shadow-lg shadow-teal/20">
+                        <Link href="/register" class="btn-primary px-5 py-2.5 text-sm font-medium rounded-xl shadow-lg shadow-teal/20">
                             Get Started
                         </Link>
                     </div>
@@ -98,7 +98,7 @@ const navLinks = [
                         {{ link.name }}
                     </Link>
                     <div class="pt-4 border-t border-lavender/30 mt-4">
-                        <Link href="/get-started" class="block w-full btn-primary px-4 py-3 text-center text-sm font-medium rounded-xl">
+                        <Link href="/register" class="block w-full btn-primary px-4 py-3 text-center text-sm font-medium rounded-xl">
                             Get Started
                         </Link>
                     </div>

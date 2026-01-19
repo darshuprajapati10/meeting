@@ -24,6 +24,7 @@ Route::get('/privacy', fn() => Inertia::render('Privacy'))->name('privacy');
 // Authentication Routes (Web)
 Route::get('/login', [WebLoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [WebLoginController::class, 'login']);
+Route::get('/register', fn() => Inertia::render('Auth/Signup'))->name('register');
 Route::post('/logout', [WebLoginController::class, 'logout'])->name('logout');
 
 // Admin Routes (Protected - Platform Admin Only)

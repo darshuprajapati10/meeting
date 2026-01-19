@@ -107,7 +107,11 @@ class RegisterController extends Controller
             ]);
         }
 
-        // Generate email verification token and send verification email
+        // Mark email as verified for auto-login (optional - can be changed later)
+        $user->email_verified_at = now();
+        $user->save();
+
+        // Generate email verification token and send verification email (for future use)
         try {
             $verificationToken = $user->generateEmailVerificationToken();
             $appUrl = config('app.url');
@@ -129,15 +133,21 @@ class RegisterController extends Controller
             // Continue with registration even if email sending fails
         }
 
-        // Don't create token yet - user must verify email first
-        // Return response indicating email verification is required
+        // Create authentication token for auto-login
+        $tokenResult = $user->createToken('auth_token');
+        $token = $tokenResult->plainTextToken;
+        $expiresAt = now()->addMinutes(config('sanctum.expiration', 43200));
+
         return response()->json([
             'data' => new UserResource($user),
             'meta' => [
                 'organization' => new OrganizationResource($organization),
+                'token' => $token,
+                'expires_at' => $expiresAt->toIso8601String(),
+                'expires_in_seconds' => config('sanctum.expiration', 43200) * 60,
             ],
-            'message' => 'Registration successful! Please check your email to verify your account before logging in.',
-            'requires_verification' => true,
+            'message' => 'Registration successful! You have been automatically logged in.',
+            'auto_logged_in' => true,
         ], 201);
     }
 }
